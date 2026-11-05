@@ -1,0 +1,4 @@
+.env
+api.txt
+__pycache__/
+*.log
