@@ -11,10 +11,7 @@ Built on the **Switch** platform (headless **OpenCode CLI** agent runtime + **Di
 | 📺 Demo video | https://youtu.be/cpbiY-cRCjg |
 | 📝 Blog post | https://dev.to/imkashaf/building-amply-how-i-built-an-electrical-engineering-lab-assistant-on-switch-discord-4gnn |
 
-<!-- Add screenshots after uploading them to a docs/ folder, then remove these comment marks:
-![Amply answering in Discord](docs/screenshot-1.png)
-![E12 mapping and sanity checks](docs/screenshot-2.png)
--->
+![Amply answering in the Discord #lab channel](docs/screenshot-1.png)
 
 ---
 
@@ -100,13 +97,28 @@ You can use it to check any value Amply returns before you solder.
 
 ```
 amply/
-├── agent.py          # [EDIT THIS LINE: describe what agent.py does]
+├── docs/
+│   └── screenshot-1.png  # Demo screenshot used in this README
+├── agent.py          # Standalone terminal prototype (Gemini SDK) used to test prompts and latency
 ├── e12.py            # E12/E24 snapping + RC filter helper
 ├── test_e12.py       # Unit tests for e12.py
+├── requirements.txt  # Dependencies for agent.py
 ├── .env.example      # GEMINI_API_KEY placeholder
 ├── LICENSE           # MIT
 └── README.md
 ```
+
+---
+
+## 🧪 Local Prototype (`agent.py`)
+
+`agent.py` is a standalone terminal version of Amply built directly on the Gemini SDK. We used it to iterate on the system prompt and measure response time before moving the agent into Switch. It prints the response time after every answer.
+
+```bash
+python agent.py
+```
+
+It is **not** what runs in Discord. The Discord deployment runs entirely through Switch (OpenCode runner, Discord Connector, SSE streaming) as described above.
 
 ---
 
@@ -124,9 +136,12 @@ amply/
 ```bash
 git clone https://github.com/imkashaf/amply.git
 cd amply
+pip install -r requirements.txt
 cp .env.example .env     # then put your GEMINI_API_KEY inside .env
 python -m unittest -v    # optional: verify e12.py works
 ```
+
+> The `.env` key is only used by the optional local prototype `agent.py` (see below). The Discord agent gets its model access through the OpenCode config inside Switch.
 
 ### Step 2: Create the agent in Switch Console
 
@@ -146,9 +161,10 @@ CORE OPERATIONAL RULES:
 1. DIRECT TEXT OUTPUT ONLY: Never invoke external tools, room management skills, or switch connectors. Always respond immediately with direct, conversational plain text.
 2. NO LATEX: Do not use LaTeX syntax, math delimiters ($ or $$), or slash commands (\frac, \Omega). Use standard Unicode characters (Ω, ±, µ, π, ×, ÷) and clear readable text.
 3. BENCH ACCURACY: Only use real E12 values. E12 mantissas are 1.0, 1.2, 1.5, 1.8, 2.2, 2.7, 3.3, 3.9, 4.7, 5.6, 6.8, 8.2 (times a power of ten). Pick the nearest one, then recompute and state the ACTUAL resulting value (for example the real cutoff frequency or gain) and its percent error versus the target.
-4. SANITY CHECKS: Always include practical checks: rail headroom, output clipping, and power dissipation.
-5. SCOPE: Focus strictly on analog circuits, digital logic, active/passive filters, op-amps, sensors, and hardware troubleshooting.
-6. CONCISE FORMATTING: Keep answers under about 1500 characters and structured to display cleanly in Discord without truncation.
+4. FILTERS: Distinguish the natural frequency f0 = 1/(2π√(R1R2C1C2)) from the -3 dB frequency. A unity-gain Sallen-Key with equal R and equal C has Q = 0.5 (no peaking, -3 dB at about 0.64 × f0). Peaking appears only when Q is above 0.707 (for example with gain above 1 or unequal components). Never call f0 the -3 dB frequency unless Q = 0.707.
+5. SANITY CHECKS: Always include practical checks: rail headroom, output clipping, and power dissipation.
+6. SCOPE: Focus strictly on analog circuits, digital logic, active/passive filters, op-amps, sensors, and hardware troubleshooting.
+7. CONCISE FORMATTING: Keep answers under about 1500 characters and structured to display cleanly in Discord without truncation.
 ```
 
 4. Click **Save Changes**, then **Start**.
