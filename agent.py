@@ -1,4 +1,8 @@
-
+"""
+Amply local prototype: terminal chat on the Gemini SDK.
+The Discord deployment runs through Switch (OpenCode + Discord Connector);
+this file is used to test the system prompt and measure latency locally.
+"""
 import os
 import time
 from pathlib import Path
@@ -14,7 +18,7 @@ load_dotenv(env_path, override=True)
 api_key = os.getenv("GEMINI_API_KEY")
 
 if not api_key:
-    raise SystemExit("API key not found. Check D:\\dev\\.env")
+    raise SystemExit(f"API key not found. Create {env_path} with GEMINI_API_KEY=...")
 
 print("API key loaded successfully.")
 
@@ -24,24 +28,26 @@ client = genai.Client(
     http_options=types.HttpOptions(timeout=60000),
 )
 
-MODEL = "gemini-3.5-flash-lite"# 3. Hardware lab assistant instructions
-SYSTEM_PROMPT = """
-You are a Senior Hardware Lab Assistant for an Electrical Engineering
-student.
+MODEL = "gemini-3.5-flash-lite"
 
-Explain electronics in simple, beginner-friendly language.
-Solve circuit problems step by step and define formulas.
-Help with diodes, Zener diodes, rectifiers, clippers, clampers,
-op-amps, circuit calculations, and lab viva questions.
-Never invent missing circuit values.
-Ask for missing information when necessary.
-Prioritize electrical safety.
-Keep answers concise unless more detail is requested.
+# 3. Same rules as the Switch agent instructions in the README
+SYSTEM_PROMPT = """
+You are Amply, a specialized Electrical Engineering Lab Assistant for students and bench prototyping.
+Answer user questions directly in clear, concise plain text.
+
+CORE OPERATIONAL RULES:
+1. NO LATEX: Do not use LaTeX syntax, math delimiters ($ or $$), or slash commands. Use Unicode characters (Ω, ±, µ, π, ×, ÷) and readable text.
+2. BENCH ACCURACY: Only use real E12 values. E12 mantissas are 1.0, 1.2, 1.5, 1.8, 2.2, 2.7, 3.3, 3.9, 4.7, 5.6, 6.8, 8.2 (times a power of ten). Pick the nearest one, then recompute and state the ACTUAL resulting value (cutoff frequency, gain) and its percent error versus the target.
+3. FILTERS: Distinguish the natural frequency f0 = 1/(2π√(R1R2C1C2)) from the -3 dB frequency. A unity-gain Sallen-Key with equal R and equal C has Q = 0.5 (no peaking, -3 dB at about 0.64 × f0). Peaking appears only when Q is above 0.707 (for example gain above 1 or unequal components). Never call f0 the -3 dB frequency unless Q = 0.707.
+4. SANITY CHECKS: Always include rail headroom, output clipping, and power dissipation checks.
+5. Never invent missing circuit values. Ask for them if needed.
+6. Prioritize electrical safety.
+7. Keep answers under about 1500 characters.
 """
 
 # 4. Start the assistant
 print("=" * 38)
-print("      AI HARDWARE LAB ASSISTANT")
+print("      AMPLY: AI HARDWARE LAB ASSISTANT")
 print("=" * 38)
 print("Ask about circuits, components, or lab work.")
 print("Type 'exit' to quit.\n")
@@ -62,10 +68,7 @@ while True:
     if not question:
         continue
 
-    conversation.append({
-        "role": "user",
-        "parts": [{"text": question}],
-    })
+    conversation.append({"role": "user", "parts": [{"text": question}]})
 
     start_time = time.perf_counter()
     print("Thinking...", flush=True)
@@ -77,36 +80,27 @@ while True:
             config=types.GenerateContentConfig(
                 system_instruction=SYSTEM_PROMPT,
                 temperature=0.2,
-                max_output_tokens=300,
+                max_output_tokens=800,
             ),
         )
 
-        answer = response.text
-
-        if not answer:
-            answer = "No text response received. Please try again."
-
+        answer = response.text or "No text response received. Please try again."
         print(f"\nAssistant:\n{answer}")
 
         elapsed = time.perf_counter() - start_time
         print(f"\n[Response time: {elapsed:.1f} seconds]")
 
-        conversation.append({
-            "role": "model",
-            "parts": [{"text": answer}],
-        })
+        conversation.append({"role": "model", "parts": [{"text": answer}]})
 
         # Keep only the last three exchanges
         conversation = conversation[-6:]
 
     except errors.APIError as error:
         conversation.pop()
-        elapsed = time.perf_counter() - start_time
-        print(f"\nGemini API error after {elapsed:.1f} seconds:")
+        print(f"\nGemini API error after {time.perf_counter() - start_time:.1f} seconds:")
         print(error)
 
     except Exception as error:
         conversation.pop()
-        elapsed = time.perf_counter() - start_time
-        print(f"\nUnexpected error after {elapsed:.1f} seconds:")
+        print(f"\nUnexpected error after {time.perf_counter() - start_time:.1f} seconds:")
         print(error)
