@@ -100,6 +100,7 @@ amply/
 ├── test_e12.py       # Unit tests for e12.py
 ├── requirements.txt  # Dependencies for agent.py
 ├── .env.example      # GEMINI_API_KEY placeholder
+├── .gitignore
 ├── LICENSE           # MIT
 └── README.md
 ```
@@ -133,11 +134,12 @@ It is **not** what runs in Discord. The Discord deployment runs entirely through
 git clone https://github.com/imkashaf/amply.git
 cd amply
 pip install -r requirements.txt
-cp .env.example .env     # then put your GEMINI_API_KEY inside .env
+cp .env.example .env     # Windows: copy .env.example .env
+# then put your GEMINI_API_KEY inside .env
 python -m unittest -v    # optional: verify e12.py works
 ```
 
-> The `.env` key is only used by the optional local prototype `agent.py` (see below). The Discord agent gets its model access through the OpenCode config inside Switch.
+> The `.env` key is only used by the optional local prototype `agent.py`. The Discord agent gets its model access through the OpenCode config inside Switch.
 
 ### Step 2: Create the agent in Switch Console
 
