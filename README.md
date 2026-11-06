@@ -11,8 +11,6 @@ Built on the **Switch** platform (headless **OpenCode CLI** agent runtime + **Di
 | 📺 Demo video | https://youtu.be/cpbiY-cRCjg |
 | 📝 Blog post | https://dev.to/imkashaf/building-amply-how-i-built-an-electrical-engineering-lab-assistant-on-switch-discord-4gnn |
 
-![Amply answering in the Discord #lab channel](docs/screenshot-1.png)
-
 ---
 
 ## ⚡ The Problem
@@ -97,8 +95,6 @@ You can use it to check any value Amply returns before you solder.
 
 ```
 amply/
-├── docs/
-│   └── screenshot-1.png  # Demo screenshot used in this README
 ├── agent.py          # Standalone terminal prototype (Gemini SDK) used to test prompts and latency
 ├── e12.py            # E12/E24 snapping + RC filter helper
 ├── test_e12.py       # Unit tests for e12.py
